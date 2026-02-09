@@ -1,38 +1,34 @@
 const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
+require("dotenv").config();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-// 🔹 Database Connection
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
-});
-
-// 🔹 Test Route
+// Root route
 app.get("/", (req, res) => {
   res.json({ message: "API Running 🚀" });
 });
 
-// 🔹 Test DB Connection Route
-app.get("/test-db", (req, res) => {
-  db.query("SELECT 1", (err, result) => {
-    if (err) {
-      res.status(500).json({ error: "Database connection failed ❌" });
-    } else {
-      res.json({ message: "Database Connected Successfully ✅" });
-    }
-  });
+// ✅ test-db route
+app.get("/test-db", async (req, res) => {
+  try {
+    const conn = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT || 3306),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    });
+
+    const [rows] = await conn.query("SELECT 1 + 1 AS result");
+    await conn.end();
+
+    res.json({ ok: true, db: "connected", result: rows[0].result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 const PORT = process.env.PORT || 10000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
-});
+app.listen(PORT, () => console.log("Server running on", PORT));
