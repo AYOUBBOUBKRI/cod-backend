@@ -1,12 +1,12 @@
 const router = require("express").Router();
 const pool = require("../db");
 
-// Health
-router.get("/", (req, res) => {
-  res.json({ message: "API routes OK ✅" });
+// Health check
+router.get("/health", (req, res) => {
+  res.json({ ok: true, message: "API routes OK ✅" });
 });
 
-// Test DB with pool
+// Test DB
 router.get("/test-db", async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT 1 + 1 AS result");
@@ -17,3 +17,4 @@ router.get("/test-db", async (req, res) => {
 });
 
 module.exports = router;
+
