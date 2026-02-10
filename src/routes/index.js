@@ -1,20 +1,6 @@
-// src/routes/index.js
 const router = require("express").Router();
-const pool = require("../db");
 
-// Health
-router.get("/health", (req, res) => {
-  res.json({ ok: true, message: "API routes OK ✅" });
-});
-
-// Test DB
-router.get("/test-db", async (req, res) => {
-  try {
-    const [rows] = await pool.query("SELECT 1 + 1 AS result");
-    res.json({ ok: true, db: "connected", result: rows[0].result });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
+router.use(require("./health.routes"));
+router.use(require("./db.routes"));
 
 module.exports = router;

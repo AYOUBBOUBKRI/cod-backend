@@ -1,17 +1,18 @@
-// src/app.js
 const express = require("express");
-const routes = require("./routes");
+const cors = require("cors");
 
 const app = express();
 
+app.use(cors({ origin: "*" })); // مؤقتاً، من بعد نحدّدو domains
 app.use(express.json());
 
-// Root
-app.get("/", (req, res) => {
-  res.json({ message: "API Running 🚀" });
-});
+app.get("/", (req, res) => res.json({ message: "API Running 🚀" }));
 
-// Mount API routes
-app.use("/api", routes);
+app.use("/api", require("./routes"));
+
+// Error fallback
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: "Route not found" });
+});
 
 module.exports = app;
