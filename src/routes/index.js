@@ -1,7 +1,8 @@
+// src/routes/index.js
 const router = require("express").Router();
 const pool = require("../db");
 
-// Health check
+// Health
 router.get("/health", (req, res) => {
   res.json({ ok: true, message: "API routes OK ✅" });
 });
@@ -17,4 +18,3 @@ router.get("/test-db", async (req, res) => {
 });
 
 module.exports = router;
-
