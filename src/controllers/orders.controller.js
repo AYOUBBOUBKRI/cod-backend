@@ -30,3 +30,25 @@ exports.list = async (req, res) => {
     res.status(400).json({ ok: false, error: err.message });
   }
 };
+
+
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { status } = req.body;
+
+    const allowed = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    if (!status || !allowed.includes(status)) {
+      return res.status(422).json({ ok: false, error: "Invalid status" });
+    }
+
+    const updated = await ordersService.updateStatus(id, status);
+    if (!updated) return res.status(404).json({ ok: false, error: "Order not found" });
+
+    return res.json({ ok: true, order: updated });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+};

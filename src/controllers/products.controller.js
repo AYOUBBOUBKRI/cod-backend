@@ -1,4 +1,5 @@
 const service = require("../services/products.service");
+const productsService = require("../services/products.service");
 
 function bad(res, msg) {
   return res.status(400).json({ ok: false, error: msg });
@@ -25,31 +26,25 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
+    const supplier_id = req.user.id; // ✅ من JWT
     const { name, description, price, stock, status } = req.body;
 
-    if (!name) return bad(res, "name required");
-    if (price == null) return bad(res, "price required");
-
-    // supplier_id: إذا admin يقدر يمررو، إلا fournisseur ناخدو من التوكن
-    const supplier_id =
-      req.user.role === "admin" && req.body.supplier_id
-        ? Number(req.body.supplier_id)
-        : req.user.id;
-
-    const item = await service.create({
+    const product = await productsService.create({
       supplier_id,
       name,
       description,
-      price: Number(price),
-      stock: Number(stock || 0),
+      price,
+      stock,
       status,
     });
 
-    res.status(201).json({ ok: true, item });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
+    return res.status(201).json({ ok: true, product });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: "Server error" });
   }
 };
+
 
 exports.update = async (req, res) => {
   try {

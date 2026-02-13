@@ -62,3 +62,15 @@ exports.listOrders = async () => {
   );
   return rows;
 };
+
+exports.updateStatus = async (orderId, status) => {
+  const [r] = await pool.query(
+    "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+    [status, orderId]
+  );
+  if (r.affectedRows === 0) return null;
+
+  const [rows] = await pool.query("SELECT * FROM orders WHERE id = ?", [orderId]);
+  return rows[0];
+};
+

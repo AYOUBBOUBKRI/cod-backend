@@ -22,12 +22,16 @@ async function getById(id) {
 }
 
 async function create({ supplier_id, name, description, price, stock, status }) {
-  const [r] = await db.query(
-    "INSERT INTO products (supplier_id, name, description, price, stock, status) VALUES (?, ?, ?, ?, ?, ?)",
-    [supplier_id, name, description || null, price, stock, status || "draft"]
+  const [result] = await db.query(
+    `INSERT INTO products (supplier_id, name, description, price, stock, status)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [supplier_id, name, description ?? null, price, stock, status ?? "draft"]
   );
-  return getById(r.insertId);
+
+  const [rows] = await db.query(`SELECT * FROM products WHERE id = ?`, [result.insertId]);
+  return rows[0];
 }
+
 
 async function update(id, { name, description, price, stock, status }) {
   await db.query(
