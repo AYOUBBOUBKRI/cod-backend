@@ -5,6 +5,7 @@ router.use(require("./db.routes"));
 router.use(require("./auth.routes"));
 router.use(require("./admin.routes"));
 router.use(require("./products.routes"));
+router.use(require("./orders.routes"));
 
 const auth = require("../middlewares/auth");
 
