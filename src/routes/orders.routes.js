@@ -15,4 +15,7 @@ router.get("/orders", auth, requireRole(["admin", "fournisseur"]), ctrl.list);
 // Admin: update order status
 router.patch("/orders/:id/status", auth, requireRole(["admin"]), ctrl.updateStatus);
 
+// Order details (admin / fournisseur / acheteur with rules)
+router.get("/orders/:id", auth, requireRole(["admin", "fournisseur", "acheteur"]), ctrl.show);
+
 module.exports = router;

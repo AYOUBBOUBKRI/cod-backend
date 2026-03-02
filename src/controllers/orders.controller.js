@@ -52,3 +52,27 @@ exports.updateStatus = async (req, res) => {
     return res.status(500).json({ ok: false, error: "Server error" });
   }
 };
+
+
+exports.show = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const user = req.user; // { id, role, ... }
+    const data = await ordersService.getOrderDetails({
+      orderId: id,
+      userId: user.id,
+      role: user.role,
+    });
+
+    if (!data) return res.status(404).json({ ok: false, error: "Order not found" });
+
+    return res.json({ ok: true, order: data.order, items: data.items });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+};
+
+
+

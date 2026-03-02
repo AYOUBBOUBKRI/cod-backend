@@ -74,3 +74,61 @@ exports.updateStatus = async (orderId, status) => {
   return rows[0];
 };
 
+
+
+
+exports.getOrderDetails = async ({ orderId, userId, role }) => {
+  // 1) fetch order
+  const [orders] = await pool.query(
+    "SELECT * FROM orders WHERE id = ? LIMIT 1",
+    [orderId]
+  );
+  if (orders.length === 0) return null;
+
+  const order = orders[0];
+
+  // 2) permission checks
+  if (role === "acheteur") {
+    if (Number(order.user_id) !== Number(userId)) return null;
+  }
+
+  if (role === "fournisseur") {
+    // fournisseur can view only if order contains at least one product of this supplier
+    const [rows] = await pool.query(
+      `
+      SELECT oi.id
+      FROM order_items oi
+      JOIN products p ON p.id = oi.product_id
+      WHERE oi.order_id = ? AND p.supplier_id = ?
+      LIMIT 1
+      `,
+      [orderId, userId]
+    );
+    if (rows.length === 0) return null;
+  }
+
+  // 3) items details
+  const [items] = await pool.query(
+    `
+    SELECT 
+      oi.id,
+      oi.order_id,
+      oi.product_id,
+      oi.qty,
+      oi.price,
+      p.name AS product_name,
+      p.supplier_id
+    FROM order_items oi
+    JOIN products p ON p.id = oi.product_id
+    WHERE oi.order_id = ?
+    ORDER BY oi.id ASC
+    `,
+    [orderId]
+  );
+
+  return { order, items };
+};
+
+
+
+
