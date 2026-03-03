@@ -9,13 +9,17 @@ router.post("/orders", auth, requireRole(["acheteur"]), ctrl.create);
 // Acheteur: my orders
 router.get("/orders/my", auth, requireRole(["acheteur"]), ctrl.myOrders);
 
-// Admin/Fournisseur: list all orders
-router.get("/orders", auth, requireRole(["admin", "fournisseur"]), ctrl.list);
+// List orders (admin / fournisseur / acheteur with rules)
+router.get("/orders", auth, requireRole(["admin", "fournisseur", "acheteur"]), ctrl.list);
 
 // Admin: update order status
 router.patch("/orders/:id/status", auth, requireRole(["admin"]), ctrl.updateStatus);
 
 // Order details (admin / fournisseur / acheteur with rules)
 router.get("/orders/:id", auth, requireRole(["admin", "fournisseur", "acheteur"]), ctrl.show);
+
+
+
+
 
 module.exports = router;

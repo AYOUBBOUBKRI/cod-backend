@@ -1,5 +1,4 @@
 const service = require("../services/products.service");
-const productsService = require("../services/products.service");
 
 function bad(res, msg) {
   return res.status(400).json({ ok: false, error: msg });
@@ -29,7 +28,7 @@ exports.create = async (req, res) => {
     const supplier_id = req.user.id; // ✅ من JWT
     const { name, description, price, stock, status } = req.body;
 
-    const product = await productsService.create({
+    const product = await service.create({
       supplier_id,
       name,
       description,
@@ -52,9 +51,9 @@ exports.update = async (req, res) => {
     if (!existing) return res.status(404).json({ ok: false, error: "Not found" });
 
     // fournisseur يقدر يعدل غير منتجاتو
-    if (req.user.role === "fournisseur" && existing.supplier_id !== req.user.id) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
-    }
+  if (req.user.role === "fournisseur" && Number(existing.supplier_id) !== Number(req.user.id)) {
+    return res.status(403).json({ ok: false, error: "Forbidden" });
+  }
 
     const item = await service.update(req.params.id, {
       name: req.body.name ?? existing.name,
@@ -75,13 +74,30 @@ exports.remove = async (req, res) => {
     const existing = await service.getById(req.params.id);
     if (!existing) return res.status(404).json({ ok: false, error: "Not found" });
 
-    if (req.user.role === "fournisseur" && existing.supplier_id !== req.user.id) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
-    }
+  if (req.user.role === "fournisseur" && Number(existing.supplier_id) !== Number(req.user.id)) {
+    return res.status(403).json({ ok: false, error: "Forbidden" });
+  }
 
     const ok = await service.remove(req.params.id);
     res.json({ ok: true, deleted: ok });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
+  }
+};
+
+exports.mine = async (req, res) => {
+  try {
+    const supplier_id = req.user.id;
+
+    const data = await service.listMine({
+      supplier_id,
+      page: req.query.page,
+      limit: req.query.limit,
+      status: req.query.status,
+    });
+
+    return res.json({ ok: true, ...data });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
   }
 };

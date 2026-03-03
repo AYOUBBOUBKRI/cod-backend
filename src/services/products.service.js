@@ -46,4 +46,33 @@ async function remove(id) {
   return r.affectedRows > 0;
 }
 
-module.exports = { list, getById, create, update, remove };
+async function listMine({ supplier_id, page = 1, limit = 20, status }) {
+  page = Number(page); limit = Number(limit);
+  const offset = (page - 1) * limit;
+
+  let where = "WHERE supplier_id = ?";
+  const params = [supplier_id];
+
+  if (status) {
+    where += " AND status = ?";
+    params.push(status);
+  }
+
+  const [rows] = await db.query(
+    `SELECT id, supplier_id, name, description, price, stock, status, created_at, updated_at
+     FROM products
+     ${where}
+     ORDER BY id DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+
+  const [[countRow]] = await db.query(
+    `SELECT COUNT(*) AS total FROM products ${where}`,
+    params
+  );
+
+  return { page, limit, total: countRow.total, items: rows };
+}
+
+module.exports = { list, getById, create, update, remove , listMine};

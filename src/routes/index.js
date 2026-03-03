@@ -6,7 +6,7 @@ router.use(require("./auth.routes"));
 router.use(require("./admin.routes"));
 router.use(require("./products.routes"));
 router.use(require("./orders.routes"));
-
+router.use(require("./users.routes"));
 const auth = require("../middlewares/auth");
 
 // ✅ /api/me

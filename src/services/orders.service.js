@@ -56,13 +56,92 @@ exports.getMyOrders = async (userId) => {
   return rows;
 };
 
-exports.listOrders = async () => {
-  const [rows] = await pool.query(
-    "SELECT id, user_id, total, status, address, phone, created_at FROM orders ORDER BY id DESC"
-  );
-  return rows;
-};
+exports.listOrders = async ({ userId, role, page = 1, limit = 20, status = null }) => {
+  page = Number(page);
+  limit = Number(limit);
 
+  if (!Number.isInteger(page) || page < 1) page = 1;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) limit = 20;
+
+  const offset = (page - 1) * limit;
+
+  // Helper: status condition
+  const statusSql = status ? " AND o.status = ? " : "";
+  const statusSqlNoAlias = status ? " AND status = ? " : "";
+  const statusParam = status ? [status] : [];
+
+  // Admin: all
+  if (role === "admin") {
+    const [[countRow]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM orders WHERE 1=1 ${statusSqlNoAlias}`,
+      statusParam
+    );
+
+    const [rows] = await pool.query(
+      `SELECT id, user_id, total, status, address, phone, created_at
+       FROM orders
+       WHERE 1=1 ${statusSqlNoAlias}
+       ORDER BY id DESC
+       LIMIT ? OFFSET ?`,
+      [...statusParam, limit, offset]
+    );
+
+    return { page, limit, total: countRow.total, orders: rows };
+  }
+
+  // Acheteur: my orders only
+  if (role === "acheteur") {
+    const [[countRow]] = await pool.query(
+      `SELECT COUNT(*) AS total
+       FROM orders
+       WHERE user_id = ? ${statusSqlNoAlias}`,
+      [userId, ...statusParam]
+    );
+
+    const [rows] = await pool.query(
+      `SELECT id, user_id, total, status, address, phone, created_at
+       FROM orders
+       WHERE user_id = ? ${statusSqlNoAlias}
+       ORDER BY id DESC
+       LIMIT ? OFFSET ?`,
+      [userId, ...statusParam, limit, offset]
+    );
+
+    return { page, limit, total: countRow.total, orders: rows };
+  }
+
+  // Fournisseur: orders that contain at least one of my products
+  if (role === "fournisseur") {
+    // total
+    const [[countRow]] = await pool.query(
+      `
+      SELECT COUNT(DISTINCT o.id) AS total
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.id
+      JOIN products p ON p.id = oi.product_id
+      WHERE p.supplier_id = ? ${statusSql}
+      `,
+      [userId, ...statusParam]
+    );
+
+    const [rows] = await pool.query(
+      `
+      SELECT DISTINCT o.id, o.user_id, o.total, o.status, o.address, o.phone, o.created_at
+      FROM orders o
+      JOIN order_items oi ON oi.order_id = o.id
+      JOIN products p ON p.id = oi.product_id
+      WHERE p.supplier_id = ? ${statusSql}
+      ORDER BY o.id DESC
+      LIMIT ? OFFSET ?
+      `,
+      [userId, ...statusParam, limit, offset]
+    );
+
+    return { page, limit, total: countRow.total, orders: rows };
+  }
+
+  return { page, limit, total: 0, orders: [] };
+};
 exports.updateStatus = async (orderId, status) => {
   const [r] = await pool.query(
     "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",

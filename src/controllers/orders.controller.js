@@ -24,13 +24,25 @@ exports.myOrders = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
-    const data = await ordersService.listOrders();
-    res.json({ ok: true, orders: data });
+    const user = req.user;
+
+    const page = Number(req.query.page || 1);
+    const limit = Number(req.query.limit || 20);
+    const status = req.query.status || null;
+
+    const data = await ordersService.listOrders({
+      userId: user.id,
+      role: user.role,
+      page,
+      limit,
+      status,
+    });
+
+    res.json({ ok: true, ...data });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
   }
 };
-
 
 
 exports.updateStatus = async (req, res) => {
