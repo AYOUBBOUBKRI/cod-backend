@@ -1,15 +1,40 @@
 const db = require("../db");
 
-async function list({ page = 1, limit = 20 }) {
-  page = Number(page); limit = Number(limit);
+async function list({ page = 1, limit = 20, status, q }) {
+  page = Number(page);
+  limit = Number(limit);
+  if (!Number.isInteger(page) || page < 1) page = 1;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) limit = 20;
+
   const offset = (page - 1) * limit;
 
+  let where = "WHERE 1=1";
+  const params = [];
+
+  if (status) {
+    where += " AND status = ?";
+    params.push(status);
+  }
+
+  if (q) {
+    where += " AND name LIKE ?";
+    params.push(`%${q}%`);
+  }
+
   const [rows] = await db.query(
-    "SELECT id, supplier_id, name, description, price, stock, status, created_at, updated_at FROM products ORDER BY id DESC LIMIT ? OFFSET ?",
-    [limit, offset]
+    `SELECT id, supplier_id, name, description, price, stock, status, created_at, updated_at
+     FROM products
+     ${where}
+     ORDER BY id DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
   );
 
-  const [[countRow]] = await db.query("SELECT COUNT(*) AS total FROM products");
+  const [[countRow]] = await db.query(
+    `SELECT COUNT(*) AS total FROM products ${where}`,
+    params
+  );
+
   return { page, limit, total: countRow.total, items: rows };
 }
 
