@@ -8,29 +8,31 @@ const app = express();
 // ✅ Security headers
 app.use(helmet());
 
-// ✅ CORS (حالياً مفتوح، فـ production نحدوه بالدومين)
+// ✅ CORS
 app.use(cors());
 
 // ✅ Body parser
 app.use(express.json());
 
-// ✅ Basic rate limiting (يحميك من spam/bruteforce)
+// ✅ Rate limit
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 200, // 200 requests per IP per window
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use(limiter);
 
-// routes
+// ✅ ROUTES (خاصها تجي قبل 404)
+const routes = require("./routes");
+app.use("/api", routes);
+
+// ✅ 404 handler (خاصو يجي بعد routes)
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Not Found" });
 });
 
-const routes = require("./routes");
-app.use("/api", routes);
-
+// ✅ error handler (آخر واحد)
 const errorHandler = require("./middlewares/errorHandler");
 app.use(errorHandler);
 
