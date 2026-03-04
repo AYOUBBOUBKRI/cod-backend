@@ -9,7 +9,28 @@ const app = express();
 app.use(helmet());
 
 // ✅ CORS
-app.use(cors());
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // ✅ Thunder/Postman/server-to-server: no origin
+      if (!origin) return cb(null, true);
+
+      // ✅ إذا FRONTEND_URL ما متعيّنش: نخليها مفتوحة (dev fallback)
+      if (allowedOrigins.length === 0) return cb(null, true);
+
+      // ✅ allow only frontend domain
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+
+      return cb(new Error("CORS blocked"), false);
+    },
+    credentials: true,
+  })
+);
 
 // ✅ Body parser
 app.use(express.json());
